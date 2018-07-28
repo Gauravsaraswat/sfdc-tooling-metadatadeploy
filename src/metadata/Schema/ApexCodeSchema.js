@@ -1,6 +1,5 @@
 var jsforce = require('../../lib/JSForceConnection');
 var path = require('path');
-var fs = require('fs');
 var fileIO = require('../../utils/FileSystemIO');
 
 class ApexCode{
@@ -15,8 +14,7 @@ class ApexCode{
         var apexBody,contentId,containerId,memberId;
         let MetadataName = this.MetadataName;
         let extensionName = this.extensionName; 
-        var self = this;
-        this.readFile(fileName).
+        fileIO.readFile(fileName).
         then(function(response){
             apexBody = response;
             return jsforce.QueryRecordByObjectNameForApexCode(MetadataName,path.basename(fileName,extensionName));
@@ -55,8 +53,11 @@ class ApexCode{
                                                                             'MetadataContainerMemberId':memberId });
         }).
         then(function(response){
+            return fileIO.createBackup(fileName);
+        }).
+        then(function(response){
             console.log('Deployment Done');
-            self.createBackup(fileName);
+            process.exit();
         }).
         catch(function(reject){
             console.log('Failed Because ->'+reject);
@@ -64,19 +65,28 @@ class ApexCode{
         });
     }
 
-    createBackup(fileName){
-        console.log('Copying Started of-> ' +fileName + ' to ' + path.dirname(fileName).replace('/unpackaged/','/BackUp/')+'/'+path.basename(fileName));
-        fs.createReadStream(fileName).pipe(fs.createWriteStream(path.dirname(fileName).replace('/unpackaged','/BackUp')+'/'+path.basename(fileName)));
-        console.log('Copy Done...');
-    }
-
-    readFile(fileName){
-        return new Promise(function(resolve,reject){
-            fs.createReadStream(fileName).on('data', (chunk) => {
-                resolve(`${chunk}`);
-            });
+    refreshCode(fileName){
+        var content;
+        let MetadataName = this.MetadataName;
+        let extensionName = this.extensionName; 
+        jsforce.QueryRecordByObjectNameForApexCode(MetadataName,path.basename(fileName,extensionName)).
+        then(function(response){
+            content = response[0].Body;
+            return fileIO.saveFileContent(fileName,content);
+        }).
+        then(function(response){
+            return fileIO.createBackup(fileName);
+        }).
+        then(function(response){
+            console.log('Refresh Done');
+            process.exit();
+        }).
+        catch(function(exe){
+            console.log('Failed Because ->'+exe);
+            process.exit();
         });
     }
+
 }
 
 module.exports = ApexCode;

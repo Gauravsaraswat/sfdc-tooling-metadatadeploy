@@ -21,8 +21,7 @@ class AuraDefinition{
     }
 
     deployCode(fileName){
-        var content,contentId,containerId;
-        var self = this;
+        var content,contentId;
         let MetadataName = this.MetadataName;
         let mapping = this.mapping;
         let defType = this.findDefType(path.basename(fileName));
@@ -48,11 +47,36 @@ class AuraDefinition{
             }
         }).
         then(function(response){
+            return fileIO.createBackup(fileName);
+        }).
+        then(function(response){
             console.log('Deployment Done');
-            fileIO.createBackup(fileName);
+            process.exit();
         }).
         catch(function(reject){
             console.log('Failed Because ->'+reject);
+            process.exit();
+        });
+    }
+
+    refreshCode(fileName){
+        var content;
+        let defType = this.findDefType(path.basename(fileName));
+        jsforce.QueryRecordByFields('AuraDefinition',{'AuraDefinitionBundle.DeveloperName':path.dirname(fileName).split(path.sep).pop(),
+                                                                 'DefType':defType},'Id,Source').
+        then(function(response){
+            content = response[0].Source;
+            return fileIO.saveFileContent(fileName,content);
+        }).
+        then(function(response){
+            return fileIO.createBackup(fileName);
+        }).
+        then(function(response){
+            console.log('Refresh Done');
+            process.exit();
+        }).
+        catch(function(exe){
+            console.log('Failed Because ->'+exe);
             process.exit();
         });
     }

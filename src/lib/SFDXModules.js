@@ -41,6 +41,24 @@ exports.validationAsync = function(fileName){
     });
 }
 
+exports.refreshMetadata = function(fileName){
+    jsforce.createConnection(username,password)
+    .then(function(response){
+        if(!fileName.includes('/aura/')){
+            var MetadataName = mapping[mapping['ExtensionToFolder'][path.extname(fileName)]]['xmlName'];
+            var code = new ApexCode(MetadataName,fileName,path.extname(fileName));
+            code.refreshCode(fileName);
+        }
+        else{
+            var bundle = new Bundle('AuraDefinition',fileName);
+            bundle.refreshCode(fileName);
+        }
+    }).catch(function(error){
+        console.log(error);
+    });
+
+}
+
 exports.saveCurrentFile = function(AliasName,fileName){
     return new Promise(function(resolve,reject){
         validateCurrentFile(fileName)

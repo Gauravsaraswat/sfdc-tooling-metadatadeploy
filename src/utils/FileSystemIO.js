@@ -9,7 +9,10 @@ class FileSystemIO{
 
     createBackup(fileName){
         console.log('Copying Started of-> ' +fileName + ' to ' + path.dirname(fileName).replace('/unpackaged/','/BackUp/')+'/'+path.basename(fileName));
-        fs.createReadStream(fileName).pipe(fs.createWriteStream(path.dirname(fileName).replace('/unpackaged','/BackUp')+'/'+path.basename(fileName)));
+        return new Promise(function(resolve,reject){
+            var reqStream = fs.createReadStream(fileName).pipe(fs.createWriteStream(path.dirname(fileName).replace('/unpackaged','/BackUp')+'/'+path.basename(fileName)));
+            reqStream.on('finish', function () { resolve() });
+        });
     }
     
 
@@ -17,6 +20,15 @@ class FileSystemIO{
         return new Promise(function(resolve,reject){
             fs.createReadStream(fileName).on('data', (chunk) => {
                 resolve(`${chunk}`);
+            });
+        });
+    }
+
+    saveFileContent(fileName,StringContent){
+        return new Promise(function(resolve,reject){
+            fs.writeFile(fileName, StringContent, function (err) {
+                if (err) throw err;
+                resolve(true);
             });
         });
     }
